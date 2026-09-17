@@ -1,0 +1,156 @@
+@import "tailwindcss";
+/* react-day-picker ships its own base layout; the colours are driven by CSS custom
+   properties we set per hotel theme in components/date-picker.tsx */
+@import "react-day-picker/style.css";
+
+/*
+ * Almost nothing global on purpose.
+ *
+ * Every colour, radius, shadow and typeface on these pages comes from the hotel's own theme
+ * and is applied inline from the shared tokens. A design system here would fight it.
+ *
+ * What IS global is the handful of things that are not the hotel's to decide: how a focus
+ * ring behaves, whether motion plays for someone who has asked for less of it, and what a
+ * printed confirmation leaves out. Those are accessibility and platform behaviour, not
+ * brand, and every hotel gets them the same.
+ */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Set per page from the hotel's primary colour; the fallback is only ever seen if a
+   component is rendered outside a themed page. */
+:root {
+  --kp-focus: #1f6feb;
+}
+
+/* --- focus -------------------------------------------------------------- */
+
+/*
+ * Keyboard users get a ring in the hotel's own colour, offset so it reads as a halo rather
+ * than a border change. Mouse users never see it. The engine had no focus styling at all,
+ * which made the whole flow unusable without a pointer.
+ */
+.kp-button:focus-visible,
+.kp-field:focus-visible,
+a:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--kp-focus);
+  outline-offset: 2px;
+}
+
+.kp-field:focus {
+  outline: none;
+  border-color: var(--kp-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--kp-focus) 18%, transparent);
+}
+
+.kp-field::placeholder {
+  color: currentColor;
+  opacity: 0.42;
+}
+
+/* --- interaction -------------------------------------------------------- */
+
+.kp-button {
+  cursor: pointer;
+  transition:
+    transform 140ms ease,
+    opacity 140ms ease,
+    background-color 140ms ease;
+}
+
+.kp-button:disabled {
+  cursor: not-allowed;
+}
+
+/* Only the filled actions lift. A quiet link that jumps on hover reads as a mistake. */
+.kp-button:not(:disabled):active {
+  transform: translateY(1px);
+}
+
+/* A cell of the search rail: the whole cell is the target, so it has to look like one. */
+.kp-cell:hover {
+  background: color-mix(in srgb, var(--kp-focus) 7%, transparent) !important;
+}
+
+/* --- motion ------------------------------------------------------------- */
+
+/*
+ * One orchestrated moment: the room list settles into place as it arrives, each card a beat
+ * behind the one above. Nothing else on the page animates on load.
+ */
+@keyframes kp-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.kp-rise {
+  animation: kp-rise 420ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.kp-pop {
+  animation: kp-rise 140ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* --- the calendar ------------------------------------------------------- */
+
+/* react-day-picker's own weekday row is set very light by default, which disappears
+   entirely on a translucent panel. */
+.rdp-weekday {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.55;
+  font-weight: 500;
+}
+
+.rdp-month_caption {
+  font-size: 0.9375rem;
+}
+
+/* --- print -------------------------------------------------------------- */
+
+/*
+ * The confirmation has a "Print this page" button, so a printed page has to be worth
+ * keeping: no sticky chrome, no bottom action bar, no buttons, and ink on white.
+ */
+@media print {
+  .kp-noprint,
+  .kp-button {
+    display: none !important;
+  }
+  main {
+    background: #fff !important;
+    background-image: none !important;
+  }
+  * {
+    box-shadow: none !important;
+  }
+}
