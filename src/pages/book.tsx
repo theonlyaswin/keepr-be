@@ -72,6 +72,23 @@ import type { ThemeConfig } from "@shared/theme"
  * company to fill in a form.
  */
 
+function stayFromParams(params: URLSearchParams) {
+  const from = params.get("in")
+  const to = params.get("out")
+  if (!from || !to || !/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) return null
+  const today = format(new Date(), "yyyy-MM-dd")
+  if (from < today || differenceInCalendarDays(parseISO(to), parseISO(from)) < 1) return null
+  const count = (key: string, fallback: number, min: number) => {
+    const n = Number.parseInt(params.get(key) ?? "", 10)
+    return Number.isFinite(n) ? Math.min(Math.max(n, min), 10) : fallback
+  }
+  return {
+    checkIn: from,
+    checkOut: to,
+    occupancy: { adults: count("adults", 2, 1), children: count("children", 0, 0), rooms: count("rooms", 1, 1) },
+  }
+}
+
 export default function BookPage({ slug }: { slug: string }) {
   const { slug: pathSlug } = useParams()
   const [searchParams] = useSearchParams()
@@ -82,14 +99,15 @@ export default function BookPage({ slug }: { slug: string }) {
     retry: false,
   })
 
+  // The hotel's own site hands a search over in the URL, so a guest who already picked dates
+  // on the homepage lands on rooms rather than on the same question again.
+  const [handoff] = useState(() => stayFromParams(searchParams))
   const [step, setStep] = useState<Step>("search")
-  const [checkIn, setCheckIn] = useState(format(addDays(new Date(), 1), "yyyy-MM-dd"))
-  const [checkOut, setCheckOut] = useState(format(addDays(new Date(), 3), "yyyy-MM-dd"))
-  const [occupancy, setOccupancy] = useState<Occupancy>({
-    adults: 2,
-    children: 0,
-    rooms: 1,
-  })
+  const [checkIn, setCheckIn] = useState(handoff?.checkIn ?? format(addDays(new Date(), 1), "yyyy-MM-dd"))
+  const [checkOut, setCheckOut] = useState(handoff?.checkOut ?? format(addDays(new Date(), 3), "yyyy-MM-dd"))
+  const [occupancy, setOccupancy] = useState<Occupancy>(
+    handoff?.occupancy ?? { adults: 2, children: 0, rooms: 1 },
+  )
 
   const [editingSearch, setEditingSearch] = useState(false)
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -175,6 +193,14 @@ export default function BookPage({ slug }: { slug: string }) {
     },
     onError: (e) => setError(readableError(e)),
   })
+
+  const engineReady = engineQuery.isSuccess
+  const [handedOff, setHandedOff] = useState(false)
+  useEffect(() => {
+    if (!handoff || handedOff || !engineReady || searchParams.get("pay")) return
+    setHandedOff(true)
+    search.mutate()
+  }, [handoff, handedOff, engineReady, search, searchParams])
 
   const quoteCall = useMutation({
     mutationFn: (coupon: string | null) =>

@@ -140,6 +140,14 @@ export interface RoomTypeBrief {
   num_rooms: number
   occupancy: number
   base_rate: number
+  headline: string | null
+  description: string | null
+  amenities: string[]
+  images: string[]
+  bed_type: string | null
+  size_sqm: number | null
+  view: string | null
+  highlight: string | null
 }
 
 export interface PublicEngine {

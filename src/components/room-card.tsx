@@ -7,7 +7,6 @@ import {
   ImageOff,
   Maximize2,
   Mountain,
-  Users,
   Utensils,
 } from "lucide-react"
 
@@ -35,12 +34,12 @@ import type { ThemeConfig } from "@shared/theme"
  * it belonged to, which quietly made the list harder to scan than a plain table.
  */
 
-/** Board basis, in a word and an icon. Codes vary by hotel, so the text is matched loosely. */
-function mealPlan(meal: string) {
+/** Board basis as an icon. Codes vary by hotel, so the text is matched loosely. */
+function mealIcon(meal: string) {
   const m = meal.toLowerCase()
-  if (/breakfast|^cp$|^bb$/.test(m)) return { icon: Coffee, label: meal }
-  if (/lunch|dinner|full|all.?incl|^map$|^ap$/.test(m)) return { icon: Utensils, label: meal }
-  return { icon: BedDouble, label: meal }
+  if (/breakfast|^cp$|^bb$/.test(m)) return Coffee
+  if (/lunch|dinner|full|all.?incl|^map$|^ap$/.test(m)) return Utensils
+  return BedDouble
 }
 
 export function RoomCard({
@@ -163,7 +162,7 @@ export function RoomCard({
         {room.rate_plans.map((plan) => {
           const units = selections[plan.rate_plan_code] ?? 0
           const chosen = units > 0
-          const { icon: MealIcon, label: mealLabel } = mealPlan(plan.meal_plan)
+          const MealIcon = mealIcon(plan.meal_plan)
 
           return (
             <div
@@ -175,21 +174,11 @@ export function RoomCard({
                 boxShadow: chosen ? `inset 3px 0 0 0 ${theme.primary_color}` : "none",
               }}
             >
-              <div className="min-w-[9rem] flex-1">
-                <div className="text-[15px]" style={{ color: inkColor(theme) }}>
+              <div className="flex min-w-[9rem] flex-1 items-center gap-2.5">
+                <MealIcon className="size-4 shrink-0" style={{ color: mutedColor(theme) }} />
+                <span className="text-[15px]" style={{ color: inkColor(theme) }}>
                   {plan.rate_plan_name}
-                </div>
-                <div
-                  className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[12.5px]"
-                  style={{ color: mutedColor(theme) }}
-                >
-                  <span className="inline-flex items-center gap-1.5">
-                    <Users className="size-3.5" /> Sleeps {plan.occupancy}
-                  </span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <MealIcon className="size-3.5" /> {mealLabel}
-                  </span>
-                </div>
+                </span>
               </div>
 
               <div className="text-right">
